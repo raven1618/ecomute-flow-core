@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToastNotifications } from '@/hooks/useToastNotifications';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 
 interface FormField {
   label: string;
@@ -75,13 +74,14 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
-          // Execute the RPC call using type assertion to any for both supabase and the entire call
-          const result = await (supabase as any).rpc(functionName, params);
+          // Use type assertion to avoid TypeScript errors
+          const { data, error } = await (supabase as any).rpc(functionName, params);
           
-          if (result.error) throw result.error;
+          if (error) throw error;
           
-          notifySuccess(`Operación completada: ${result.data ? JSON.stringify(result.data) : ''}`);
-          return result.data;
+          notifySuccess(`Operación completada con éxito`);
+          console.log("Function result:", data);
+          return data;
         }
       }
       
