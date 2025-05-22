@@ -16,7 +16,15 @@ const CATEGORIES: CategoryType[] = [
   { value: 'otros', label: 'Otros' }
 ];
 
-const BudgetItemList: React.FC = () => {
+interface BudgetItemListProps {
+  onSuccess?: (message: string) => void;
+  onError?: (error: string) => void;
+}
+
+const BudgetItemList: React.FC<BudgetItemListProps> = ({ 
+  onSuccess, 
+  onError 
+}) => {
   const { budget, updateBudgetItems, formatCurrency } = useBudget();
   const [editingItem, setEditingItem] = React.useState<BudgetItem | null>(null);
   const items = budget.items;
@@ -36,8 +44,15 @@ const BudgetItemList: React.FC = () => {
         );
         updateBudgetItems(updatedItems);
         setEditingItem(null);
+        
+        if (onSuccess) {
+          onSuccess('Ítem actualizado correctamente');
+        }
       } catch (error) {
         console.error('Error updating item:', error);
+        if (onError) {
+          onError('Error al actualizar el ítem');
+        }
       }
     }
   };
@@ -98,12 +113,20 @@ const BudgetItemList: React.FC = () => {
     
     updateBudgetItems([...items, newItem]);
     setEditingItem(newItem);
+    
+    if (onSuccess) {
+      onSuccess('Nuevo ítem agregado');
+    }
   };
 
   const handleDeleteItem = (id: string) => {
     updateBudgetItems(items.filter(item => item.id !== id));
     if (editingItem && editingItem.id === id) {
       setEditingItem(null);
+    }
+    
+    if (onSuccess) {
+      onSuccess('Ítem eliminado correctamente');
     }
   };
 

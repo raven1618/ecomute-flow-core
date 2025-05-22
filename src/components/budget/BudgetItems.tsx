@@ -1,30 +1,17 @@
 
 import React from 'react';
-import { useToast } from '@/hooks/use-toast';
 import BudgetItemList from './BudgetItemList';
+import { useToastNotifications } from '@/hooks/useToastNotifications';
 
 const BudgetItems: React.FC = () => {
-  const { toast } = useToast();
-
-  // Set up toast message handlers for the toast notifications
-  const notifySuccess = (message: string) => {
-    toast({
-      title: "Éxito",
-      description: message,
-    });
-  };
-
-  const notifyError = (error: string) => {
-    toast({
-      title: "Error",
-      description: error,
-      variant: "destructive",
-    });
-  };
+  const { notifySuccess, notifyError } = useToastNotifications();
 
   return (
     <div className="space-y-6">
-      <BudgetItemList />
+      <BudgetItemList 
+        onSuccess={notifySuccess}
+        onError={notifyError}
+      />
     </div>
   );
 };
