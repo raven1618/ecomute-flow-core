@@ -7,33 +7,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, Send } from 'lucide-react';
+import { useBudget } from '@/contexts/BudgetContext';
 
-interface BudgetSummaryProps {
-  budgetId: string;
-}
-
-const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgetId }) => {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0
-    }).format(value);
-  };
+const BudgetSummary: React.FC = () => {
+  const { budget, formatCurrency } = useBudget();
+  const budgetId = budget.id;
   
-  // Mock data for the summary
-  const budgetData = {
-    client: 'Corporación ABC',
-    date: '15/05/2023',
-    subtotal: 150000000,
-    discount: 0,
-    iva: 15000000,
-    total: 165000000,
-    items: [
-      { description: 'Cartel Corporativo', qty: 1, total: 5000000 },
-      { description: 'Letras Corpóreas', qty: 10, total: 7600000 }
-    ]
-  };
+  // Calculate totals from budget items
+  const subtotal = budget.items.reduce((sum, item) => sum + item.total_gs, 0);
+  const discount = budget.discount_doc || 0;
+  const iva = subtotal * budget.iva_pct;
+  const total = subtotal - discount + iva;
   
   return (
     <div className="space-y-6 py-4">
@@ -62,11 +46,11 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgetId }) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">Cliente:</span>
-                <span>{budgetData.client}</span>
+                <span>{budget.client}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Fecha:</span>
-                <span>{budgetData.date}</span>
+                <span>{new Date(budget.issue_date).toLocaleDateString('es-PY')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Número:</span>
@@ -82,20 +66,20 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({ budgetId }) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal:</span>
-                <span>{formatCurrency(budgetData.subtotal)}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Descuento:</span>
-                <span>{formatCurrency(budgetData.discount)}</span>
+                <span>{formatCurrency(discount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">IVA (10%):</span>
-                <span>{formatCurrency(budgetData.iva)}</span>
+                <span className="text-gray-500">IVA ({budget.iva_pct * 100}%):</span>
+                <span>{formatCurrency(iva)}</span>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-bold">
                 <span>Total:</span>
-                <span>{formatCurrency(budgetData.total)}</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
           </CardContent>

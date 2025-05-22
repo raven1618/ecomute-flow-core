@@ -2,15 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BudgetItemCategory from './BudgetItemCategory';
 import BudgetItemsSummary from './BudgetItemsSummary';
 import { BudgetItem, BudgetItemCategory as CategoryType } from '@/types/budget';
-
-interface BudgetItemsProps {
-  budgetId: string;
-}
+import { useBudget } from '@/contexts/BudgetContext';
 
 // Categories for budget items
 const CATEGORIES: CategoryType[] = [
@@ -21,56 +17,11 @@ const CATEGORIES: CategoryType[] = [
   { value: 'otros', label: 'Otros' }
 ];
 
-// Mock data with categories
-const MOCK_ITEMS: BudgetItem[] = [
-  {
-    id: '1',
-    doc_id: '1',
-    item_no: 1,
-    description: 'Cartel Corporativo',
-    category: 'cartel',
-    color: 'Azul',
-    faces: 2,
-    height_cm: 200,
-    width_cm: 300,
-    area_m2: 6,
-    area_m2_ceil: 6,
-    qty: 1,
-    unit_price: 5000000,
-    discount_pct: 0,
-    total_gs: 5000000
-  },
-  {
-    id: '2',
-    doc_id: '1',
-    item_no: 2,
-    description: 'Letras Corpóreas',
-    category: 'corporeo',
-    color: 'Plata',
-    faces: 1,
-    height_cm: 50,
-    width_cm: 400,
-    area_m2: 2,
-    area_m2_ceil: 2,
-    qty: 10,
-    unit_price: 800000,
-    discount_pct: 0.05,
-    total_gs: 7600000
-  }
-];
-
-const BudgetItems: React.FC<BudgetItemsProps> = ({ budgetId }) => {
-  const [items, setItems] = useState<BudgetItem[]>(MOCK_ITEMS);
+const BudgetItems: React.FC = () => {
+  const { budget, updateBudgetItems, formatCurrency } = useBudget();
   const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
   const { toast } = useToast();
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: 'PYG',
-      minimumFractionDigits: 0
-    }).format(value);
-  };
+  const items = budget.items;
 
   const handleEdit = (item: BudgetItem) => {
     setEditingItem({...item});
@@ -82,7 +33,10 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ budgetId }) => {
         // In a real implementation, we would update the item in the database
         // await supabase.from('budget_items').update(editingItem).eq('id', editingItem.id);
         
-        setItems(items.map(item => item.id === editingItem.id ? editingItem : item));
+        const updatedItems = items.map(item => 
+          item.id === editingItem.id ? editingItem : item
+        );
+        updateBudgetItems(updatedItems);
         setEditingItem(null);
         
         toast({
@@ -138,7 +92,7 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ budgetId }) => {
   const handleAddItem = () => {
     const newItem: BudgetItem = {
       id: `new-${Date.now()}`,
-      doc_id: budgetId,
+      doc_id: budget.id,
       item_no: items.length + 1,
       description: '',
       category: 'otros',
@@ -154,12 +108,12 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ budgetId }) => {
       total_gs: 0
     };
     
-    setItems([...items, newItem]);
+    updateBudgetItems([...items, newItem]);
     setEditingItem(newItem);
   };
 
   const handleDeleteItem = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+    updateBudgetItems(items.filter(item => item.id !== id));
     if (editingItem && editingItem.id === id) {
       setEditingItem(null);
     }

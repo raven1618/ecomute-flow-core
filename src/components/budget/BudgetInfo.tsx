@@ -1,35 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Save, FileText, Printer } from 'lucide-react';
+import { useBudget } from '@/contexts/BudgetContext';
 
-interface BudgetInfoProps {
-  budgetId: string;
-}
-
-interface BudgetData {
-  id: string;
-  project_id: string;
-  client: string;
-  version: number;
-  issue_date: string;
-  discount_doc: number;
-  iva_pct: number;
-}
-
-const BudgetInfo: React.FC<BudgetInfoProps> = ({ budgetId }) => {
-  const [budget, setBudget] = useState<BudgetData>({
-    id: budgetId,
-    project_id: '1',
-    client: 'Corporación ABC',
-    version: 1,
-    issue_date: '2023-05-15',
-    discount_doc: 0,
-    iva_pct: 0.1
-  });
+const BudgetInfo: React.FC = () => {
+  const { budget, setBudget } = useBudget();
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
