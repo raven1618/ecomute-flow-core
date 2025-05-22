@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -13,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, FileText, Plus } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useToastNotifications } from '@/hooks/useToastNotifications';
 
 interface BudgetDoc {
   id: string;
@@ -68,6 +69,7 @@ const MOCK_BUDGETS: BudgetDoc[] = [
 
 const BudgetList = () => {
   const navigate = useNavigate();
+  const { notifySuccess, notifyError } = useToastNotifications();
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-PY', {
@@ -81,9 +83,28 @@ const BudgetList = () => {
     navigate(`/presupuesto/${id}`);
   };
   
-  const handleCreateBudget = () => {
-    // In a real app, this would navigate to the create form
-    alert('Crear nuevo presupuesto - Esta funcionalidad estará disponible próximamente');
+  const handleCreateBudget = async () => {
+    try {
+      const projectId = '1'; // Default project ID
+      
+      const { data, error } = await supabase
+        .from('budget_docs')
+        .insert({ 
+          project_id: projectId, 
+          name: 'Nuevo Presupuesto', 
+          status: 'draft'
+        })
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
+      notifySuccess('Presupuesto creado exitosamente');
+      navigate(`/presupuesto/${data.id}`);
+    } catch (e) {
+      console.error('Error creating budget:', e);
+      notifyError(e instanceof Error ? e.message : 'Error al crear presupuesto');
+    }
   };
   
   return (
