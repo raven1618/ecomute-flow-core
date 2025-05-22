@@ -80,10 +80,11 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           });
           
           // Execute the RPC call with properly typed parameters
-          // Using type assertion for both the function name and parameters to satisfy TypeScript
+          // Use type assertion to specific keyof Database['public']['Functions'] for the function name
+          // and RPCArgs for the parameters to ensure TypeScript compatibility
           const { data, error } = await supabase.rpc(
-            functionName as any, 
-            params as any
+            functionName as keyof Database['public']['Functions'], 
+            params as RPCArgs<keyof Database['public']['Functions']>
           );
           
           if (error) throw error;
