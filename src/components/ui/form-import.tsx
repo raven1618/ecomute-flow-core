@@ -28,6 +28,7 @@ interface FormImportProps {
 const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
   const { notifySuccess, notifyError } = useToastNotifications();
   const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form values with default values
   React.useEffect(() => {
@@ -51,16 +52,20 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
 
   const executeFunction = async (fnString: string) => {
     try {
-      // Replace placeholders in the onClick string with actual values
-      let processedFn = fnString;
+      setIsSubmitting(true);
+      console.log("Executing function:", fnString);
+      console.log("Form values:", formValues);
       
-      // Extract the function name and parameters
+      // Replace placeholders in the onClick string with actual values
       if (fnString.startsWith('call supabase.rpc(')) {
         const matches = fnString.match(/call supabase\.rpc\('([^']+)',\{([^}]+)\}\)/);
         
         if (matches && matches.length >= 3) {
           const functionName = matches[1];
           const paramsString = matches[2];
+          
+          console.log("Function name:", functionName);
+          console.log("Params string:", paramsString);
           
           // Parse parameters and replace with actual values
           const params: Record<string, any> = {};
@@ -70,18 +75,27 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             const [key, valueName] = pair.split(':');
             const trimmedKey = key.trim();
             const trimmedValueName = valueName.trim();
+            
             // Access the formValues with the trimmed value name to get the actual value
             params[trimmedKey] = formValues[trimmedValueName];
+            console.log(`Setting param ${trimmedKey} to:`, formValues[trimmedValueName]);
           });
+          
+          console.log("Final params:", params);
           
           // Use type assertion to avoid TypeScript errors
           const { data, error } = await (supabase as any).rpc(functionName, params);
           
-          if (error) throw error;
+          if (error) {
+            console.error("RPC error:", error);
+            throw error;
+          }
           
-          notifySuccess(`Operación completada con éxito`);
           console.log("Function result:", data);
+          notifySuccess(`Operación completada con éxito`);
           return data;
+        } else {
+          throw new Error('Formato de función no válido');
         }
       }
       
@@ -90,6 +104,8 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
     } catch (error) {
       console.error('Error executing function:', error);
       notifyError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -119,8 +135,9 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           <Button 
             key={index} 
             onClick={() => executeFunction(button.onClick)}
+            disabled={isSubmitting}
           >
-            {button.text}
+            {isSubmitting ? 'Procesando...' : button.text}
           </Button>
         ))}
       </CardFooter>
