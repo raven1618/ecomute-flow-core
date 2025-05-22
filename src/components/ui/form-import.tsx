@@ -26,10 +26,6 @@ interface FormImportProps {
   buttons: FormButton[];
 }
 
-// Type for RPC function arguments
-type RPCArgs<F extends keyof Database['public']['Functions']> =
-  Database['public']['Functions'][F]['Args'];
-
 const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
   const { notifySuccess, notifyError } = useToastNotifications();
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -80,12 +76,9 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           });
           
           // Execute the RPC call
-          // Use type casting to any to bypass TypeScript's strict type checking
-          // This is necessary because we're dynamically determining the function name at runtime
-          const { data, error } = await supabase.rpc(
-            functionName as any, 
-            params as any
-          );
+          // Using any as the type assertion because we're dynamically determining the function at runtime
+          // This bypasses TypeScript's strict typing requirements
+          const { data, error } = await supabase.rpc(functionName as any, params as any);
           
           if (error) throw error;
           
