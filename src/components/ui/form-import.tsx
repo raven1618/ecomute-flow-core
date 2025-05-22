@@ -75,15 +75,13 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
-          // Execute the RPC call with proper type assertion
-          // We use the generic version of supabase.rpc and skip type checking
+          // Execute the RPC call using type assertion to any for both supabase and the entire call
           const result = await (supabase as any).rpc(functionName, params);
-          const { data, error } = result;
           
-          if (error) throw error;
+          if (result.error) throw result.error;
           
-          notifySuccess(`Operación completada: ${data}`);
-          return data;
+          notifySuccess(`Operación completada: ${result.data ? JSON.stringify(result.data) : ''}`);
+          return result.data;
         }
       }
       
