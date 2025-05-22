@@ -75,7 +75,7 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           });
           
           // Execute the RPC call
-          const { data, error } = await supabase.rpc(functionName, params);
+          const { data, error } = await supabase.rpc(functionName, params as any);
           
           if (error) throw error;
           
