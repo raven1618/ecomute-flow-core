@@ -88,7 +88,9 @@ export type Database = {
       }
       budget_items: {
         Row: {
+          area_m2_ceil: number | null
           budget_id: string
+          category: string | null
           code: string | null
           created_at: string
           description: string
@@ -99,7 +101,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_m2_ceil?: number | null
           budget_id: string
+          category?: string | null
           code?: string | null
           created_at?: string
           description: string
@@ -110,7 +114,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_m2_ceil?: number | null
           budget_id?: string
+          category?: string | null
           code?: string | null
           created_at?: string
           description?: string
