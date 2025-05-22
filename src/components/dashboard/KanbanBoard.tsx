@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Card,
@@ -85,7 +84,7 @@ const KanbanBoard = () => {
   };
   
   const handleProjectClick = (projectId: string) => {
-    navigate(`/presupuesto/${projectId}`);
+    navigate(`/presupuestos/${projectId}`);
   };
   
   const handleCreateProject = () => {

@@ -85,14 +85,12 @@ const BudgetList = () => {
   
   const handleCreateBudget = async () => {
     try {
-      const projectId = '1'; // Default project ID
-      
       const { data, error } = await supabase
         .from('budget_docs')
         .insert({ 
-          project_id: projectId, 
-          name: 'Nuevo Presupuesto', 
-          status: 'draft'
+          project_id: 'demo-project', 
+          client: 'Sin nombre', 
+          version: 1 
         })
         .select('id')
         .single();
