@@ -20,12 +20,16 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
 
 interface MaterialFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
+
+// Define the valid material types based on the Supabase schema
+type MaterialType = Database["public"]["Enums"]["material_type"];
 
 const materialTypes = [
   { value: "raw", label: "Materia Prima" },
@@ -39,7 +43,7 @@ const MaterialFormDialog = ({ open, onOpenChange, onSuccess }: MaterialFormDialo
     code: "",
     name: "",
     description: "",
-    type: "raw",
+    type: "raw" as MaterialType, // Explicitly type this as MaterialType
     unit: "",
     stock_qty: 0,
     min_stock_qty: 0,
@@ -60,7 +64,13 @@ const MaterialFormDialog = ({ open, onOpenChange, onSuccess }: MaterialFormDialo
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'type') {
+      // Ensure type is one of the valid MaterialType values
+      const validValue = materialTypes.find(t => t.value === value)?.value as MaterialType;
+      setFormData(prev => ({ ...prev, [name]: validValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const validateForm = () => {
@@ -105,19 +115,22 @@ const MaterialFormDialog = ({ open, onOpenChange, onSuccess }: MaterialFormDialo
     setIsSubmitting(true);
     
     try {
+      // Create a properly typed object to insert into Supabase
+      const materialToInsert = {
+        code: formData.code || null,
+        name: formData.name,
+        description: formData.description || null,
+        type: formData.type,
+        unit: formData.unit,
+        stock_qty: formData.stock_qty,
+        min_stock_qty: formData.min_stock_qty,
+        unit_cost: formData.unit_cost,
+        location: formData.location || null,
+      };
+      
       const { error } = await supabase
         .from('materials_stock')
-        .insert({
-          code: formData.code || null,
-          name: formData.name,
-          description: formData.description || null,
-          type: formData.type,
-          unit: formData.unit,
-          stock_qty: formData.stock_qty,
-          min_stock_qty: formData.min_stock_qty,
-          unit_cost: formData.unit_cost,
-          location: formData.location || null,
-        });
+        .insert(materialToInsert);
       
       if (error) {
         throw error;
@@ -133,7 +146,7 @@ const MaterialFormDialog = ({ open, onOpenChange, onSuccess }: MaterialFormDialo
         code: "",
         name: "",
         description: "",
-        type: "raw",
+        type: "raw" as MaterialType,
         unit: "",
         stock_qty: 0,
         min_stock_qty: 0,
