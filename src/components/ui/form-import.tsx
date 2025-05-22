@@ -70,6 +70,7 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             const [key, valueName] = pair.split(':');
             const trimmedKey = key.trim();
             const trimmedValueName = valueName.trim();
+            // Access the formValues with the trimmed value name to get the actual value
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
