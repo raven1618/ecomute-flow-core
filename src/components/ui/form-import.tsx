@@ -79,10 +79,12 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
-          // Execute the RPC call with properly typed parameters
+          // Execute the RPC call
+          // Use type casting to any to bypass TypeScript's strict type checking
+          // This is necessary because we're dynamically determining the function name at runtime
           const { data, error } = await supabase.rpc(
-            functionName as string, 
-            params
+            functionName as any, 
+            params as any
           );
           
           if (error) throw error;
