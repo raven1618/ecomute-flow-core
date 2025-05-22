@@ -13,6 +13,7 @@ import WorkOrderList from "./pages/WorkOrderList";
 import WorkOrderDetail from "./pages/WorkOrderDetail";
 import Warehouse from "./pages/Warehouse";
 import Alerts from "./pages/Alerts";
+import AdminImport from "./pages/AdminImport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="wo/:id" element={<WorkOrderDetail />} />
             <Route path="warehouse" element={<Warehouse />} />
             <Route path="alerts" element={<Alerts />} />
+            <Route path="admin-import" element={<AdminImport />} />
           </Route>
           
           <Route path="*" element={<NotFound />} />
