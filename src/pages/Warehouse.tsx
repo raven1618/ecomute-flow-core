@@ -20,7 +20,6 @@ import {
 import { Plus, Search, FileUp, Download } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import MaterialFormDialog from "@/components/warehouse/MaterialFormDialog";
 
 interface MaterialStock {
   id: string;
@@ -39,35 +38,34 @@ const Warehouse = () => {
   const [materials, setMaterials] = useState<MaterialStock[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [formDialogOpen, setFormDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  const fetchMaterials = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('materials_stock')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        throw error;
-      }
-      
-      setMaterials(data || []);
-    } catch (error) {
-      console.error('Error fetching materials:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los materiales",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   useEffect(() => {
+    const fetchMaterials = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('materials_stock')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          throw error;
+        }
+        
+        setMaterials(data || []);
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los materiales",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     fetchMaterials();
     
     // Subscribe to realtime changes
@@ -97,22 +95,10 @@ const Warehouse = () => {
     : materials;
   
   const handleCreateMaterial = () => {
-    setFormDialogOpen(true);
-  };
-  
-  const handleAdjustStock = (material: MaterialStock) => {
-    // This will be implemented later
+    // In a real app, this would open a modal or navigate to create form
     toast({
       title: "Próximamente",
-      description: "Función de ajustar stock estará disponible próximamente",
-    });
-  };
-  
-  const handleEditMaterial = (material: MaterialStock) => {
-    // This will be implemented later
-    toast({
-      title: "Próximamente",
-      description: "Función de editar material estará disponible próximamente",
+      description: "Función de crear material estará disponible próximamente",
     });
   };
   
@@ -225,18 +211,10 @@ const Warehouse = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleEditMaterial(material)}
-                      >
+                      <Button variant="ghost" size="sm">
                         Editar
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleAdjustStock(material)}
-                      >
+                      <Button variant="ghost" size="sm">
                         Ajustar
                       </Button>
                     </TableCell>
@@ -247,13 +225,6 @@ const Warehouse = () => {
           </Table>
         )}
       </div>
-      
-      {/* Material Form Dialog */}
-      <MaterialFormDialog 
-        open={formDialogOpen}
-        onOpenChange={setFormDialogOpen}
-        onSuccess={fetchMaterials}
-      />
     </div>
   );
 };
