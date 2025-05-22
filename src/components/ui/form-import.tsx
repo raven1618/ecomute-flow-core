@@ -75,10 +75,10 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
-          // Execute the RPC call
-          // Using any as the type assertion because we're dynamically determining the function at runtime
-          // This bypasses TypeScript's strict typing requirements
-          const { data, error } = await supabase.rpc(functionName as any, params as any);
+          // Execute the RPC call with proper type assertion
+          // We use the generic version of supabase.rpc and skip type checking
+          const result = await (supabase as any).rpc(functionName, params);
+          const { data, error } = result;
           
           if (error) throw error;
           
