@@ -9,7 +9,491 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          priority: Database["public"]["Enums"]["alert_priority"]
+          status: Database["public"]["Enums"]["alert_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["alert_priority"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["alert_priority"]
+          status?: Database["public"]["Enums"]["alert_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      budget_docs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          status: Database["public"]["Enums"]["budget_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          status?: Database["public"]["Enums"]["budget_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["budget_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_docs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_items: {
+        Row: {
+          budget_id: string
+          code: string | null
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          total_price: number | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          budget_id: string
+          code?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          quantity: number
+          total_price?: number | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          budget_id?: string
+          code?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budget_docs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          po_id: string | null
+          receipt_date: string
+          receipt_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_id?: string | null
+          receipt_date: string
+          receipt_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          po_id?: string | null
+          receipt_date?: string
+          receipt_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_receipts_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gr_items: {
+        Row: {
+          created_at: string
+          gr_id: string
+          id: string
+          material_id: string | null
+          po_item_id: string | null
+          quantity_received: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gr_id: string
+          id?: string
+          material_id?: string | null
+          po_item_id?: string | null
+          quantity_received: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gr_id?: string
+          id?: string
+          material_id?: string | null
+          po_item_id?: string | null
+          quantity_received?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gr_items_gr_id_fkey"
+            columns: ["gr_id"]
+            isOneToOne: false
+            referencedRelation: "goods_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gr_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gr_items_po_item_id_fkey"
+            columns: ["po_item_id"]
+            isOneToOne: false
+            referencedRelation: "po_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials_stock: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          min_stock_qty: number
+          name: string
+          stock_qty: number
+          type: Database["public"]["Enums"]["material_type"]
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          min_stock_qty?: number
+          name: string
+          stock_qty?: number
+          type?: Database["public"]["Enums"]["material_type"]
+          unit: string
+          unit_cost: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          min_stock_qty?: number
+          name?: string
+          stock_qty?: number
+          type?: Database["public"]["Enums"]["material_type"]
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      po_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          material_id: string | null
+          po_id: string
+          quantity: number
+          total_price: number | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          material_id?: string | null
+          po_id: string
+          quantity: number
+          total_price?: number | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          material_id?: string | null
+          po_id?: string
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_items_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials_stock"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "po_items_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          client: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          updated_at: string
+        }
+        Insert: {
+          client?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+        }
+        Update: {
+          client?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string | null
+          status: string
+          supplier: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date: string
+          po_number?: string | null
+          status?: string
+          supplier: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string | null
+          status?: string
+          supplier?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wo_lines: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string
+          id: string
+          qty: number
+          total_cost: number | null
+          unit: string | null
+          unit_cost: number
+          updated_at: string
+          wo_id: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          qty: number
+          total_cost?: number | null
+          unit?: string | null
+          unit_cost: number
+          updated_at?: string
+          wo_id: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          qty?: number
+          total_cost?: number | null
+          unit?: string | null
+          unit_cost?: number
+          updated_at?: string
+          wo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wo_lines_wo_id_fkey"
+            columns: ["wo_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          project_id: string
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: Database["public"]["Enums"]["work_order_status"]
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          project_id: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          project_id?: string
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          total_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +502,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      alert_priority: "low" | "medium" | "high" | "critical"
+      alert_status: "new" | "acknowledged" | "resolved"
+      budget_status: "draft" | "approved" | "rejected" | "revised"
+      material_type: "raw" | "finished" | "consumable" | "tool"
+      project_status: "draft" | "active" | "completed" | "cancelled"
+      work_order_status: "draft" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +622,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alert_priority: ["low", "medium", "high", "critical"],
+      alert_status: ["new", "acknowledged", "resolved"],
+      budget_status: ["draft", "approved", "rejected", "revised"],
+      material_type: ["raw", "finished", "consumable", "tool"],
+      project_status: ["draft", "active", "completed", "cancelled"],
+      work_order_status: ["draft", "in_progress", "completed", "cancelled"],
+    },
   },
 } as const

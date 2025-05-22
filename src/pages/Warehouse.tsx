@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -18,67 +18,88 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus, Search, FileUp, Download } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface MaterialStock {
   id: string;
-  sku: string;
-  description: string;
-  qty_on_hand: number;
-  reorder_point: number;
+  code: string;
+  name: string;
+  description: string | null;
+  stock_qty: number;
+  min_stock_qty: number;
+  unit: string;
+  unit_cost: number;
+  type: string;
+  location: string | null;
 }
 
-const MOCK_MATERIALS: MaterialStock[] = [
-  {
-    id: '1',
-    sku: 'ALU-001',
-    description: 'Perfil de Aluminio 5cm',
-    qty_on_hand: 120,
-    reorder_point: 50
-  },
-  {
-    id: '2',
-    sku: 'VIN-001',
-    description: 'Vinilo Adhesivo Blanco',
-    qty_on_hand: 45,
-    reorder_point: 50
-  },
-  {
-    id: '3',
-    sku: 'ACR-001',
-    description: 'Plancha Acrílico 3mm',
-    qty_on_hand: 30,
-    reorder_point: 20
-  },
-  {
-    id: '4',
-    sku: 'LED-001',
-    description: 'Tira LED 5m',
-    qty_on_hand: 15,
-    reorder_point: 25
-  },
-  {
-    id: '5',
-    sku: 'TOR-001',
-    description: 'Tornillos Autoroscantes 1"',
-    qty_on_hand: 500,
-    reorder_point: 200
-  }
-];
-
 const Warehouse = () => {
-  const [materials, setMaterials] = useState<MaterialStock[]>(MOCK_MATERIALS);
+  const [materials, setMaterials] = useState<MaterialStock[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('materials_stock')
+          .select('*')
+          .order('name');
+        
+        if (error) {
+          throw error;
+        }
+        
+        setMaterials(data || []);
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los materiales",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchMaterials();
+    
+    // Subscribe to realtime changes
+    const subscription = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'materials_stock' },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          fetchMaterials();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [toast]);
   
   const filteredMaterials = searchTerm 
     ? materials.filter(material => 
-        material.sku.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        material.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (material.code?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        material.description?.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     : materials;
   
   const handleCreateMaterial = () => {
     // In a real app, this would open a modal or navigate to create form
-    alert('Crear nuevo material - Esta funcionalidad estará disponible próximamente');
+    toast({
+      title: "Próximamente",
+      description: "Función de crear material estará disponible próximamente",
+    });
   };
   
   return (
@@ -131,7 +152,7 @@ const Warehouse = () => {
               <div>
                 <p className="text-sm text-gray-500">Bajo Stock</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {materials.filter(m => m.qty_on_hand < m.reorder_point).length}
+                  {materials.filter(m => m.stock_qty < m.min_stock_qty).length}
                 </p>
               </div>
               <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
@@ -143,47 +164,66 @@ const Warehouse = () => {
       </div>
       
       <div className="bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>SKU</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead className="text-right">Cantidad</TableHead>
-              <TableHead className="text-right">Punto de Reorden</TableHead>
-              <TableHead className="text-center">Estado</TableHead>
-              <TableHead className="text-center">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredMaterials.map((material) => (
-              <TableRow key={material.id} className={material.qty_on_hand < material.reorder_point ? "bg-yellow-50" : ""}>
-                <TableCell className="font-medium">{material.sku}</TableCell>
-                <TableCell>{material.description}</TableCell>
-                <TableCell className="text-right">{material.qty_on_hand}</TableCell>
-                <TableCell className="text-right">{material.reorder_point}</TableCell>
-                <TableCell className="text-center">
-                  {material.qty_on_hand < material.reorder_point ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Bajo Stock
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      OK
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Button variant="ghost" size="sm">
-                    Editar
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    Ajustar
-                  </Button>
-                </TableCell>
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <p className="text-gray-500">Cargando materiales...</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead className="text-right">Cantidad</TableHead>
+                <TableHead className="text-right">Punto de Reorden</TableHead>
+                <TableHead className="text-center">Estado</TableHead>
+                <TableHead className="text-center">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredMaterials.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    {searchTerm ? "No se encontraron materiales" : "No hay materiales registrados"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredMaterials.map((material) => (
+                  <TableRow key={material.id} className={material.stock_qty < material.min_stock_qty ? "bg-yellow-50" : ""}>
+                    <TableCell className="font-medium">{material.code}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{material.name}</p>
+                        {material.description && <p className="text-sm text-gray-500">{material.description}</p>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">{material.stock_qty} {material.unit}</TableCell>
+                    <TableCell className="text-right">{material.min_stock_qty} {material.unit}</TableCell>
+                    <TableCell className="text-center">
+                      {material.stock_qty < material.min_stock_qty ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Bajo Stock
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          OK
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button variant="ghost" size="sm">
+                        Editar
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        Ajustar
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );
