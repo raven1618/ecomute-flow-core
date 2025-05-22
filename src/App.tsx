@@ -1,9 +1,18 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import AppLayout from "./components/layout/AppLayout";
+import AuthCard from "./components/auth/AuthCard";
+import Dashboard from "./pages/Dashboard";
+import BudgetList from "./pages/BudgetList";
+import BudgetDetail from "./pages/BudgetDetail";
+import WorkOrderList from "./pages/WorkOrderList";
+import WorkOrderDetail from "./pages/WorkOrderDetail";
+import Warehouse from "./pages/Warehouse";
+import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +24,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/login" element={<AuthCard />} />
+          
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="presupuestos" element={<BudgetList />} />
+            <Route path="presupuesto/:id" element={<BudgetDetail />} />
+            <Route path="wo" element={<WorkOrderList />} />
+            <Route path="wo/:id" element={<WorkOrderDetail />} />
+            <Route path="warehouse" element={<Warehouse />} />
+            <Route path="alerts" element={<Alerts />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
