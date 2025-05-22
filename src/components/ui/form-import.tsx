@@ -25,6 +25,11 @@ interface FormImportProps {
   buttons: FormButton[];
 }
 
+// Define types for our supported RPC functions
+interface RPCFunctionParams {
+  [key: string]: any;
+}
+
 const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
   const { notifySuccess, notifyError } = useToastNotifications();
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -63,7 +68,7 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           const paramsString = matches[2];
           
           // Parse parameters and replace with actual values
-          const params: Record<string, any> = {};
+          const params: RPCFunctionParams = {};
           const paramPairs = paramsString.split(',');
           
           paramPairs.forEach(pair => {
@@ -74,8 +79,8 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
             params[trimmedKey] = formValues[trimmedValueName];
           });
           
-          // Execute the RPC call
-          const { data, error } = await supabase.rpc(functionName, params as any);
+          // Execute the RPC call with properly typed parameters
+          const { data, error } = await supabase.rpc(functionName, params);
           
           if (error) throw error;
           
