@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToastNotifications } from '@/hooks/useToastNotifications';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 interface FormField {
   label: string;
@@ -25,10 +26,9 @@ interface FormImportProps {
   buttons: FormButton[];
 }
 
-// Define types for our supported RPC functions
-interface RPCFunctionParams {
-  [key: string]: any;
-}
+// Type for RPC function arguments
+type RPCArgs<F extends keyof Database['public']['Functions']> =
+  Database['public']['Functions'][F]['Args'];
 
 const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
   const { notifySuccess, notifyError } = useToastNotifications();
@@ -68,7 +68,7 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           const paramsString = matches[2];
           
           // Parse parameters and replace with actual values
-          const params: RPCFunctionParams = {};
+          const params: Record<string, any> = {};
           const paramPairs = paramsString.split(',');
           
           paramPairs.forEach(pair => {
@@ -80,7 +80,10 @@ const FormImport: React.FC<FormImportProps> = ({ title, fields, buttons }) => {
           });
           
           // Execute the RPC call with properly typed parameters
-          const { data, error } = await supabase.rpc(functionName, params);
+          const { data, error } = await supabase.rpc(
+            functionName as keyof Database['public']['Functions'],
+            params as RPCArgs<typeof functionName>
+          );
           
           if (error) throw error;
           
