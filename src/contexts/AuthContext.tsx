@@ -6,6 +6,7 @@ import { User } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   signIn: (email: string, password: string) => Promise<{ data: { user: User | null }, error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ data: { user: User | null }, error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -47,13 +48,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return result;
   };
   
+  const signUp = async (email: string, password: string) => {
+    const result = await supabase.auth.signUp({ email, password });
+    return result;
+  };
+  
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
   
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

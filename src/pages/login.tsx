@@ -13,11 +13,12 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const handleLogin = async () => {
+  const handleAuth = async () => {
     if (!email || !password) {
       toast({
         title: "Error",
@@ -30,15 +31,30 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Bienvenido a ECOMUTE Core",
-      });
-      navigate("/dashboard");
+      if (isRegisterMode) {
+        // Register new user
+        const { error } = await signUp(email, password);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Registro exitoso",
+          description: "Su cuenta ha sido creada. Verifique su correo para confirmar su cuenta.",
+        });
+        
+        // Don't navigate yet as the user might need to verify their email first
+      } else {
+        // Login existing user
+        const { error } = await signIn(email, password);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: "Bienvenido a ECOMUTE Core",
+        });
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       console.error("Authentication error:", error);
       toast({
@@ -61,9 +77,11 @@ export default function Login() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Iniciar Sesión</CardTitle>
+            <CardTitle>{isRegisterMode ? "Crear Cuenta" : "Iniciar Sesión"}</CardTitle>
             <CardDescription>
-              Ingrese sus credenciales para acceder al sistema
+              {isRegisterMode 
+                ? "Complete los campos para crear una nueva cuenta" 
+                : "Ingrese sus credenciales para acceder al sistema"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -92,21 +110,32 @@ export default function Login() {
                 />
               </div>
               <Button 
-                onClick={handleLogin} 
+                onClick={handleAuth} 
                 className="w-full" 
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Iniciando sesión...
+                    {isRegisterMode ? "Registrando..." : "Iniciando sesión..."}
                   </>
                 ) : (
-                  "Iniciar Sesión"
+                  isRegisterMode ? "Registrarse" : "Iniciar Sesión"
                 )}
               </Button>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-center">
+            <Button 
+              variant="link" 
+              onClick={() => setIsRegisterMode(!isRegisterMode)}
+              className="px-0"
+            >
+              {isRegisterMode 
+                ? "¿Ya tiene una cuenta? Inicie sesión" 
+                : "¿No tiene una cuenta? Regístrese"}
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </div>
