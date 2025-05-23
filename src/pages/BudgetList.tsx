@@ -93,8 +93,8 @@ const BudgetList = () => {
         .from('budget_docs')
         .insert<BudgetInsert>({
           project_id: 'demo-project',
-          client: 'Sin nombre',
-          version: 1
+          name: 'Sin nombre',
+          status: 'draft'
         })
         .select('id')
         .single();
