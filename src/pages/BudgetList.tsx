@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Table,
   TableBody,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, FileText, Plus, AlertCircle } from 'lucide-react';
+import { Eye, FileText, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToastNotifications } from '@/hooks/useToastNotifications';
 import { Database } from '@/integrations/supabase/types';
@@ -24,68 +25,34 @@ import {
   DialogHeader, 
   DialogTitle 
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type BudgetInsert = Database['public']['Tables']['budget_docs']['Insert'];
+type BudgetDoc = Database['public']['Tables']['budget_docs']['Row'];
 
-interface BudgetDoc {
-  id: string;
-  project_id: string;
-  client: string;
-  version: number;
-  issue_date: string;
-  discount_doc: number;
-  iva_pct: number;
-  subtotal: number;
-  iva: number;
-  total: number;
+interface BudgetDocWithClient extends BudgetDoc {
+  client?: string;
+  version?: number;
+  issue_date?: string;
+  discount_doc?: number;
+  iva_pct?: number;
+  subtotal?: number;
+  iva?: number;
+  total?: number;
 }
 
-const MOCK_BUDGETS: BudgetDoc[] = [
-  {
-    id: '1',
-    project_id: '1',
-    client: 'Corporación ABC',
-    version: 1,
-    issue_date: '2023-05-15',
-    discount_doc: 0,
-    iva_pct: 0.1,
-    subtotal: 150000000,
-    iva: 15000000,
-    total: 165000000
-  },
-  {
-    id: '2',
-    project_id: '2',
-    client: 'Desarrolladora XYZ',
-    version: 2,
-    issue_date: '2023-06-20',
-    discount_doc: 5000000,
-    iva_pct: 0.1,
-    subtotal: 250000000,
-    iva: 24500000,
-    total: 269500000
-  },
-  {
-    id: '3',
-    project_id: '3',
-    client: 'Inmobiliaria Plaza',
-    version: 1,
-    issue_date: '2023-07-25',
-    discount_doc: 0,
-    iva_pct: 0.1,
-    subtotal: 350000000,
-    iva: 35000000,
-    total: 385000000
-  }
-];
+const formSchema = z.object({
+  name: z.string().min(1, "Nombre es requerido"),
+  projectId: z.string().uuid("ID de proyecto debe ser un UUID válido"),
+  client: z.string().min(1, "Cliente es requerido"),
+  version: z.number().int().positive().default(1)
+});
 
-interface NewBudgetFormValues {
-  name: string;
-  projectId: string;
-}
+type FormValues = z.infer<typeof formSchema>;
 
 const BudgetList = () => {
   const navigate = useNavigate();
@@ -93,13 +60,59 @@ const BudgetList = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [budgets, setBudgets] = useState<BudgetDocWithClient[]>([]);
+  const [fetchingBudgets, setFetchingBudgets] = useState(true);
   
-  const form = useForm<NewBudgetFormValues>({
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      name: 'Sin nombre',
+      name: 'Presupuesto nuevo',
       projectId: '00000000-0000-0000-0000-000000000001',
+      client: '',
+      version: 1
     }
   });
+  
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
+  
+  const fetchBudgets = async () => {
+    setFetchingBudgets(true);
+    try {
+      // In a real implementation, replace with actual database fetch
+      const { data, error } = await supabase
+        .from('budget_docs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching budgets:', error);
+        notifyError('Error al cargar presupuestos: ' + error.message);
+        throw error;
+      }
+      
+      // For demo purposes, we'll add the client info manually
+      // In a real implementation, you would join with a clients table
+      const enhancedData = data.map(budget => ({
+        ...budget,
+        client: 'Cliente ' + budget.id.substring(0, 4),
+        version: 1,
+        issue_date: new Date().toISOString(),
+        discount_doc: 0,
+        iva_pct: 0.1,
+        subtotal: 150000000,
+        iva: 15000000,
+        total: 165000000
+      }));
+      
+      setBudgets(enhancedData);
+    } catch (error) {
+      console.error('Error fetching budgets:', error);
+    } finally {
+      setFetchingBudgets(false);
+    }
+  };
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-PY', {
@@ -113,7 +126,7 @@ const BudgetList = () => {
     navigate(`/presupuesto/${id}`);
   };
   
-  const handleCreateBudget = async (values: NewBudgetFormValues) => {
+  const handleCreateBudget = async (values: FormValues) => {
     setIsLoading(true);
     setErrorMessage(null);
     
@@ -121,17 +134,22 @@ const BudgetList = () => {
       console.log("Creating budget with:", {
         project_id: values.projectId,
         name: values.name,
-        status: 'draft'
+        status: 'draft',
+        client: values.client,
+        version: values.version
       });
+      
+      const budgetId = uuidv4();
       
       const { data, error } = await supabase
         .from('budget_docs')
-        .insert<BudgetInsert>({
+        .insert({
+          id: budgetId,
           project_id: values.projectId,
           name: values.name,
           status: 'draft'
         })
-        .select('id')
+        .select()
         .single();
         
       if (error) {
@@ -143,7 +161,9 @@ const BudgetList = () => {
       
       notifySuccess('Presupuesto creado exitosamente');
       setIsDialogOpen(false);
-      navigate(`/presupuesto/${data.id}`);
+      form.reset();
+      fetchBudgets(); // Refresh the list
+      navigate(`/presupuesto/${budgetId}`);
     } catch (e) {
       console.error('Error creating budget:', e);
       setErrorMessage(e instanceof Error ? e.message : 'Error al crear presupuesto');
@@ -163,43 +183,56 @@ const BudgetList = () => {
       </div>
       
       <div className="bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Versión</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Subtotal</TableHead>
-              <TableHead className="text-right">IVA</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead className="text-center">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {MOCK_BUDGETS.map((budget) => (
-              <TableRow key={budget.id}>
-                <TableCell className="font-medium">{budget.client}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">v{budget.version}</Badge>
-                </TableCell>
-                <TableCell>{new Date(budget.issue_date).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">{formatCurrency(budget.subtotal)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(budget.iva)}</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(budget.total)}</TableCell>
-                <TableCell className="text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleViewBudget(budget.id)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver
-                  </Button>
-                </TableCell>
+        {fetchingBudgets ? (
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <span className="ml-2 text-gray-500">Cargando presupuestos...</span>
+          </div>
+        ) : budgets.length === 0 ? (
+          <div className="text-center p-12 text-gray-500">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium mb-2">No hay presupuestos</h3>
+            <p>Cree un nuevo presupuesto para comenzar</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Versión</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead className="text-right">IVA</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-center">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {budgets.map((budget) => (
+                <TableRow key={budget.id}>
+                  <TableCell className="font-medium">{budget.client || 'Sin cliente'}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">v{budget.version || 1}</Badge>
+                  </TableCell>
+                  <TableCell>{budget.issue_date ? new Date(budget.issue_date).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell className="text-right">{budget.subtotal ? formatCurrency(budget.subtotal) : '-'}</TableCell>
+                  <TableCell className="text-right">{budget.iva ? formatCurrency(budget.iva) : '-'}</TableCell>
+                  <TableCell className="text-right font-medium">{budget.total ? formatCurrency(budget.total) : formatCurrency(0)}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewBudget(budget.id)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -222,6 +255,7 @@ const BudgetList = () => {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -235,6 +269,40 @@ const BudgetList = () => {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="client"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="version"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Versión</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -247,7 +315,10 @@ const BudgetList = () => {
               )}
               
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  form.reset();
+                }}>
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isLoading}>
