@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -15,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, FileText, Plus } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToastNotifications } from '@/hooks/useToastNotifications';
+import { Database } from '@/integrations/supabase/types';
+
+type BudgetInsert = Database['public']['Tables']['budget_docs']['Insert'];
 
 interface BudgetDoc {
   id: string;
@@ -88,8 +91,8 @@ const BudgetList = () => {
     try {
       const { data, error } = await supabase
         .from('budget_docs')
-        .insert({ 
-          project_id: 'demo-project', 
+        .insert<BudgetInsert>({
+          project_id: 'demo-project',
           name: 'Nuevo Presupuesto', 
           status: 'draft'
         })
