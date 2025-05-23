@@ -16,11 +16,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/contexts/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { signOut, user } = useAuth();
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
   
@@ -48,13 +51,16 @@ const Header = () => {
               <Avatar>
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-ecomute-600 text-white">
-                  US
+                  {user?.email?.substring(0, 2).toUpperCase() || 'US'}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs font-normal truncate">
+              {user?.email || 'Usuario'}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Perfil</DropdownMenuItem>
             <DropdownMenuItem>Configuración</DropdownMenuItem>

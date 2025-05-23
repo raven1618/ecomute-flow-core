@@ -15,6 +15,8 @@ import Warehouse from "./pages/Warehouse";
 import Alerts from "./pages/Alerts";
 import AdminImport from "./pages/AdminImport";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/login";
+import RouteGuard from "./components/RouteGuard";
 
 const queryClient = new QueryClient();
 
@@ -25,9 +27,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<AuthCard />} />
+          <Route path="/login" element={<Login />} />
           
-          <Route path="/" element={<AppLayout />}>
+          <Route path="/" element={<RouteGuard><AppLayout /></RouteGuard>}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="presupuestos" element={<BudgetList />} />
