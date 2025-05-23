@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BudgetFormProps {
   onSubmit: (values: BudgetFormValues) => Promise<void>;
@@ -35,7 +36,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
       projectId: '',
       client: '',
       version: 1
-    }
+    },
+    mode: "onBlur" // Validates on blur for better user experience
   });
   
   const handleSubmit = async (values: BudgetFormValues) => {
@@ -52,7 +54,11 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
             <FormItem>
               <FormLabel>Nombre</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input 
+                  {...field} 
+                  className={form.formState.errors.name ? "border-red-500" : ""}
+                  aria-invalid={!!form.formState.errors.name}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -68,11 +74,18 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
               <FormControl>
                 {projects.length === 0
                   ? <p className='text-sm text-muted-foreground'>No hay proyectos</p>
-                  : <Select value={projectId} onValueChange={(value) => {
-                      setProjectId(value);
-                      field.onChange(value);
-                    }}>
-                      <SelectTrigger><SelectValue placeholder='Elegir proyecto' /></SelectTrigger>
+                  : <Select 
+                      value={projectId} 
+                      onValueChange={(value) => {
+                        setProjectId(value);
+                        field.onChange(value);
+                      }}
+                    >
+                      <SelectTrigger 
+                        className={form.formState.errors.projectId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder='Elegir proyecto' />
+                      </SelectTrigger>
                       <SelectContent>
                         {projects.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -93,7 +106,11 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
             <FormItem>
               <FormLabel>Cliente</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input 
+                  {...field} 
+                  className={form.formState.errors.client ? "border-red-500" : ""}
+                  aria-invalid={!!form.formState.errors.client}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -112,6 +129,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
                   min="1"
                   {...field}
                   onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  className={form.formState.errors.version ? "border-red-500" : ""}
+                  aria-invalid={!!form.formState.errors.version}
                 />
               </FormControl>
               <FormMessage />
@@ -120,17 +139,17 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
         />
         
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center">
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4 mr-2" />
-            <p className="text-sm">{errorMessage}</p>
-          </div>
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
         )}
         
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading || !form.formState.isValid && form.formState.isDirty}>
             {isLoading ? 'Creando...' : 'Crear Presupuesto'}
           </Button>
         </DialogFooter>
