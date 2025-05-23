@@ -33,13 +33,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         setUser(session?.user ?? null);
       }
     );
 
     // Check for existing session
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    supabase.auth.getSession().then(({ data }) => {
+      console.log("Initial session check:", data.session?.user?.email);
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
 
@@ -47,11 +49,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
   
   const signIn = async (email: string, password: string) => {
+    console.log("Attempting sign in with:", email);
     const result = await supabase.auth.signInWithPassword({ email, password });
+    console.log("Sign in result:", result.data.user?.email, result.error?.message);
     return result;
   };
   
   const signUp = async (email: string, password: string) => {
+    console.log("Attempting sign up with:", email);
     const result = await supabase.auth.signUp({ 
       email, 
       password,
@@ -59,6 +64,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         emailRedirectTo: window.location.origin + '/login'
       }
     });
+    
+    console.log("Sign up result:", result.data.user?.email, result.error?.message);
     
     // Add a flag to indicate confirmation email was sent
     return {

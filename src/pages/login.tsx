@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
@@ -16,9 +16,17 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
   
   const handleAuth = async () => {
     if (!email || !password) {
@@ -31,6 +39,7 @@ export default function Login() {
     }
     
     setIsLoading(true);
+    setLoginError(null);
     
     try {
       if (isRegisterMode) {
@@ -43,18 +52,23 @@ export default function Login() {
           setConfirmationSent(true);
           toast({
             title: "Registro exitoso",
-            description: "Su cuenta ha sido creada. Verifique su correo para confirmar su cuenta.",
+            description: "Su cuenta ha sido creada. Puede iniciar sesión ahora.",
           });
+          
+          // Automatically switch to login mode after successful registration
+          setIsRegisterMode(false);
         }
       } else {
         // Login existing user
         const { error } = await signIn(email, password);
         
         if (error) {
-          // Check if the error is due to unconfirmed email
+          console.log("Login error:", error.message);
+          
           if (error.message?.includes('Email not confirmed')) {
             throw new Error('Su correo electrónico aún no ha sido confirmado. Por favor, revise su bandeja de entrada y confirme su correo.');
           }
+          
           throw error;
         }
         
@@ -66,6 +80,7 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error("Authentication error:", error);
+      setLoginError(error.message || "Error en la autenticación");
       toast({
         title: "Error",
         description: error.message || "Error en la autenticación",
@@ -94,12 +109,20 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {confirmationSent && (
+            {confirmationSent && !isRegisterMode && (
               <Alert className="mb-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Su cuenta ha sido creada. Puede iniciar sesión ahora.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {loginError && (
+              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Debe confirmar su correo electrónico antes de iniciar sesión. 
-                  Por favor, revise su bandeja de entrada y haga clic en el enlace de confirmación.
+                  {loginError}
                 </AlertDescription>
               </Alert>
             )}
@@ -150,6 +173,7 @@ export default function Login() {
               onClick={() => {
                 setIsRegisterMode(!isRegisterMode);
                 setConfirmationSent(false);
+                setLoginError(null);
               }}
               className="px-0"
             >
