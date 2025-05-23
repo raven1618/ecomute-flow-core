@@ -5,13 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle } from 'lucide-react';
 
 import { budgetFormSchema, BudgetFormValues } from './schemas/budgetFormSchema';
-import useProjects from '@/hooks/useProjects';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ProjectSelector from '@/components/common/ProjectSelector';
 
 interface BudgetFormProps {
   onSubmit: (values: BudgetFormValues) => Promise<void>;
@@ -27,7 +26,6 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
   errorMessage 
 }) => {
   const [projectId, setProjectId] = React.useState('');
-  const projects = useProjects();
   
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -71,29 +69,14 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Proyecto</FormLabel>
-              <FormControl>
-                {projects.length === 0
-                  ? <p className='text-sm text-muted-foreground'>No hay proyectos</p>
-                  : <Select 
-                      value={projectId} 
-                      onValueChange={(value) => {
-                        setProjectId(value);
-                        field.onChange(value);
-                      }}
-                    >
-                      <SelectTrigger 
-                        className={form.formState.errors.projectId ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder='Elegir proyecto' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                }
-              </FormControl>
+              <ProjectSelector
+                value={projectId}
+                onChange={(value) => {
+                  setProjectId(value);
+                  field.onChange(value);
+                }}
+                hasError={!!form.formState.errors.projectId}
+              />
               <FormMessage />
             </FormItem>
           )}
