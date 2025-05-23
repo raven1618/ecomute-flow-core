@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToastNotifications } from '@/hooks/useToastNotifications';
+import useProjects from '@/hooks/useProjects';
 
 import { 
   Dialog, 
@@ -20,6 +21,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nombre es requerido"),
@@ -45,12 +47,14 @@ const BudgetCreateDialog: React.FC<BudgetCreateDialogProps> = ({
   const { notifySuccess, notifyError } = useToastNotifications();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState('');
+  const projects = useProjects();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: 'Presupuesto nuevo',
-      projectId: '00000000-0000-0000-0000-000000000001',
+      projectId: '',
       client: '',
       version: 1
     }
@@ -133,9 +137,22 @@ const BudgetCreateDialog: React.FC<BudgetCreateDialogProps> = ({
               name="projectId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ID del Proyecto</FormLabel>
+                  <FormLabel>Proyecto</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    {projects.length === 0
+                      ? <p className='text-sm text-muted-foreground'>No hay proyectos</p>
+                      : <Select value={projectId} onValueChange={(value) => {
+                          setProjectId(value);
+                          field.onChange(value);
+                        }}>
+                          <SelectTrigger><SelectValue placeholder='Elegir proyecto' /></SelectTrigger>
+                          <SelectContent>
+                            {projects.map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                    }
                   </FormControl>
                   <FormMessage />
                 </FormItem>
