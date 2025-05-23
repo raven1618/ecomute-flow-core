@@ -12,10 +12,21 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, FileText, Plus } from 'lucide-react';
+import { Eye, FileText, Plus, AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToastNotifications } from '@/hooks/useToastNotifications';
 import { Database } from '@/integrations/supabase/types';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
 
 type BudgetInsert = Database['public']['Tables']['budget_docs']['Insert'];
 
@@ -71,9 +82,24 @@ const MOCK_BUDGETS: BudgetDoc[] = [
   }
 ];
 
+interface NewBudgetFormValues {
+  name: string;
+  projectId: string;
+}
+
 const BudgetList = () => {
   const navigate = useNavigate();
   const { notifySuccess, notifyError } = useToastNotifications();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  const form = useForm<NewBudgetFormValues>({
+    defaultValues: {
+      name: 'Sin nombre',
+      projectId: '00000000-0000-0000-0000-000000000001',
+    }
+  });
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-PY', {
@@ -87,26 +113,42 @@ const BudgetList = () => {
     navigate(`/presupuesto/${id}`);
   };
   
-  const handleCreateBudget = async () => {
+  const handleCreateBudget = async (values: NewBudgetFormValues) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    
     try {
-      // Using a valid UUID format for project_id
+      console.log("Creating budget with:", {
+        project_id: values.projectId,
+        name: values.name,
+        status: 'draft'
+      });
+      
       const { data, error } = await supabase
         .from('budget_docs')
         .insert<BudgetInsert>({
-          project_id: '00000000-0000-0000-0000-000000000001', // Valid UUID format
-          name: 'Sin nombre',
+          project_id: values.projectId,
+          name: values.name,
           status: 'draft'
         })
         .select('id')
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating budget:', error);
+        setErrorMessage(`Error: ${error.message}`);
+        notifyError(error.message);
+        throw error;
+      }
       
       notifySuccess('Presupuesto creado exitosamente');
+      setIsDialogOpen(false);
       navigate(`/presupuesto/${data.id}`);
     } catch (e) {
       console.error('Error creating budget:', e);
-      notifyError(e instanceof Error ? e.message : 'Error al crear presupuesto');
+      setErrorMessage(e instanceof Error ? e.message : 'Error al crear presupuesto');
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -114,7 +156,7 @@ const BudgetList = () => {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Presupuestos</h1>
-        <Button onClick={handleCreateBudget}>
+        <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Presupuesto
         </Button>
@@ -159,6 +201,63 @@ const BudgetList = () => {
           </TableBody>
         </Table>
       </div>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear nuevo presupuesto</DialogTitle>
+            <DialogDescription>
+              Complete los datos para crear un nuevo presupuesto.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateBudget)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="projectId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID del Proyecto</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {errorMessage && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <p className="text-sm">{errorMessage}</p>
+                </div>
+              )}
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Creando...' : 'Crear Presupuesto'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
