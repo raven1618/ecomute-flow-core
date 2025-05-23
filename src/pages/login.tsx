@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,21 +35,28 @@ export default function Login() {
     try {
       if (isRegisterMode) {
         // Register new user
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         
         if (error) throw error;
         
-        toast({
-          title: "Registro exitoso",
-          description: "Su cuenta ha sido creada. Verifique su correo para confirmar su cuenta.",
-        });
-        
-        // Don't navigate yet as the user might need to verify their email first
+        if (data.confirmationSent) {
+          setConfirmationSent(true);
+          toast({
+            title: "Registro exitoso",
+            description: "Su cuenta ha sido creada. Verifique su correo para confirmar su cuenta.",
+          });
+        }
       } else {
         // Login existing user
         const { error } = await signIn(email, password);
         
-        if (error) throw error;
+        if (error) {
+          // Check if the error is due to unconfirmed email
+          if (error.message?.includes('Email not confirmed')) {
+            throw new Error('Su correo electrónico aún no ha sido confirmado. Por favor, revise su bandeja de entrada y confirme su correo.');
+          }
+          throw error;
+        }
         
         toast({
           title: "Inicio de sesión exitoso",
@@ -85,6 +94,16 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {confirmationSent && (
+              <Alert className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Debe confirmar su correo electrónico antes de iniciar sesión. 
+                  Por favor, revise su bandeja de entrada y haga clic en el enlace de confirmación.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -128,7 +147,10 @@ export default function Login() {
           <CardFooter className="flex justify-center">
             <Button 
               variant="link" 
-              onClick={() => setIsRegisterMode(!isRegisterMode)}
+              onClick={() => {
+                setIsRegisterMode(!isRegisterMode);
+                setConfirmationSent(false);
+              }}
               className="px-0"
             >
               {isRegisterMode 
