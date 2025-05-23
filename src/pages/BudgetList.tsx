@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -89,10 +89,11 @@ const BudgetList = () => {
   
   const handleCreateBudget = async () => {
     try {
+      // Using a valid UUID format for project_id
       const { data, error } = await supabase
         .from('budget_docs')
         .insert<BudgetInsert>({
-          project_id: 'demo-project',
+          project_id: '00000000-0000-0000-0000-000000000001', // Valid UUID format
           name: 'Sin nombre',
           status: 'draft'
         })
