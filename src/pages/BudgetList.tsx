@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -89,8 +90,8 @@ const BudgetList = () => {
         .from('budget_docs')
         .insert({ 
           project_id: 'demo-project', 
-          client: 'Sin nombre', 
-          version: 1 
+          name: 'Nuevo Presupuesto', 
+          status: 'draft'
         })
         .select('id')
         .single();
