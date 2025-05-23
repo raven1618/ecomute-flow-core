@@ -6,31 +6,69 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const AuthCard = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would call your auth service
-    if (email && password) {
-      // For demo purposes, we'll just navigate to dashboard
-      toast({
-        title: isLogin ? "Login successful" : "Account created",
-        description: "Welcome to ECOMUTE Core",
-      });
-      navigate("/dashboard");
-    } else {
+    if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Por favor complete todos los campos",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      if (isLogin) {
+        // Login flow
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: "Bienvenido a ECOMUTE Core",
+        });
+        navigate("/dashboard");
+      } else {
+        // Sign up flow
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Cuenta creada",
+          description: "Verifique su correo electrónico para activar su cuenta",
+        });
+      }
+    } catch (error: any) {
+      console.error("Authentication error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Error en la autenticación",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,6 +100,7 @@ const AuthCard = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nombre@empresa.com" 
+                    disabled={isLoading}
                     required 
                   />
                 </div>
@@ -72,11 +111,19 @@ const AuthCard = () => {
                     type="password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                     required 
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  {isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isLogin ? "Iniciando sesión..." : "Creando cuenta..."}
+                    </>
+                  ) : (
+                    isLogin ? "Iniciar Sesión" : "Crear Cuenta"
+                  )}
                 </Button>
               </div>
             </form>
@@ -85,6 +132,7 @@ const AuthCard = () => {
             <Button 
               variant="link" 
               onClick={() => setIsLogin(!isLogin)}
+              disabled={isLoading}
             >
               {isLogin 
                 ? "¿No tiene cuenta? Regístrese" 
